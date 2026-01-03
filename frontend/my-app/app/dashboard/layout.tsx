@@ -11,25 +11,25 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated, isInitialized, checkAuth } = useAuthStore();
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const verifySession = async () => {
-      await checkAuth();
-      setIsChecking(false);
-    };
-    verifySession();
-  }, [checkAuth]);
+    // Only check auth if we haven't checked it yet in this session
+    if (!isInitialized) {
+      checkAuth();
+    }
+  }, [isInitialized, checkAuth]);
 
   useEffect(() => {
-    if (!isChecking && !isAuthenticated) {
+    // Redirect only once we are sure the auth check is done and failed
+    if (isInitialized && !isAuthenticated) {
       router.push('/');
     }
-  }, [isChecking, isAuthenticated, router]);
+  }, [isInitialized, isAuthenticated, router]);
 
-  if (isChecking) {
+  // Show loading while we are checking auth for the first time
+  if (!isInitialized) {
      return (
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>

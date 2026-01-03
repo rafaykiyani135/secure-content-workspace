@@ -9,12 +9,7 @@ import { useEffect } from 'react';
 export default function Navbar() {
   const router = useRouter();
   // const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const { user, logout, checkAuth } = useAuthStore();
-
-  useEffect(() => {
-    // Sync store on mount
-    checkAuth();
-  }, [checkAuth]);
+  const { user, logout } = useAuthStore();
 
   const handleLogout = async () => {
     await logout();

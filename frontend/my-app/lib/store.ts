@@ -12,6 +12,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   login: (userData: User) => void;
   logout: () => void;
   checkAuth: () => Promise<void>;
@@ -20,33 +21,39 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null, // token removed from state as it's in cookie
+      user: null,
       isAuthenticated: false,
+      isInitialized: false,
 
       login: (userData) => {
         set({ user: userData, isAuthenticated: true });
       },
 
       logout: async () => {
-        await authApi.logout();
-        set({ user: null, isAuthenticated: false });
+        try {
+          await authApi.logout();
+        } finally {
+          set({ user: null, isAuthenticated: false });
+        }
       },
 
       checkAuth: async () => {
         try {
           const user = await authApi.getMe();
           if (user) {
-            set({ user, isAuthenticated: true });
+            set({ user, isAuthenticated: true, isInitialized: true });
           } else {
-            set({ user: null, isAuthenticated: false });
+            set({ user: null, isAuthenticated: false, isInitialized: true });
           }
         } catch (error) {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false, isInitialized: true });
         }
       },
     }),
     {
       name: 'auth-storage',
+      // Only persist the user object for caching, not the auth status
+      partialize: (state) => ({ user: state.user }),
     }
   )
 );
