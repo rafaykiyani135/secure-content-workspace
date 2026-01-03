@@ -27,10 +27,12 @@ This guide attempts to take your **BxTrack** application to production using **R
     - **Root Directory:** `backend` (Important! This tells Render to look in the backend folder).
     - **Environment:** Node
     - **Build Command:** `npm install && npx prisma generate`
-    - **Start Command:** `npm start`
+      - _Note:_ `prisma generate` creates the client files needed for the code to run.
+    - **Start Command:** `npx prisma migrate deploy && npm start`
+      - _Note:_ This automatically applies any pending database migrations every time you deploy.
 5.  **Environment Variables** (Scroll down to "Advanced"):
     - `DATABASE_URL` = Paste the **Internal Connection String** from Part 1.
-    - `JWT_SECRET` = Generate a long random string (e.g. `openssl rand -base64 32`).
+    - `JWT_SECRET` = Generate a long random string (e.g. `bxtracksolutionsdemoroundthree`).
     - `FRONTEND_URL` = `https://your-netlify-site-name.netlify.app`
       - _Note:_ You don't have this URL yet. For now, enter `http://localhost:3000` or `*` (asterisk) to allow all. **You MUST update this after deploying the frontend.**
 6.  Click **Create Web Service**.
@@ -47,13 +49,16 @@ This guide attempts to take your **BxTrack** application to production using **R
     - **Base directory:** `frontend/my-app`
     - **Build command:** `npm run build`
     - **Publish directory:** `.next`
-5.  **Environment Variables:**
-    - Click "Add environment variable".
-    - Key: `NEXT_PUBLIC_API_URL`
-    - Value: Your **Render Backend URL** (e.g., `https://bxtrack-backend.onrender.com`).
-      - **Important:** Do NOT add a trailing slash `/` at the end.
-6.  Click **Deploy site**.
-7.  Netlify will give you a URL (e.g., `https://amazing-app-123.netlify.app`).
+    - _Note:_ I have added a `netlify.toml` file in `frontend/my-app`. Netlify should detect this and automatically configure the **Essential Next.js** plugin.
+
+### **Important: Fixing "Page not found" (404)**
+
+If you saw a 404 on all paths, it's usually because:
+
+1.  **Publish Directory was "Not set":** Netlify didn't know the built files were inside `.next`.
+2.  **Missing Redirects:** Next.js uses client-side routing. Without the Next.js plugin, Netlify tries to find a physical `.html` file for every URL (like `/dashboard`) and fails.
+
+**The Fix:** The `netlify.toml` I just added tells Netlify exactly what to do and ensures the Next.js plugin is active. Re-deploy your site and it should work! 5. **Environment Variables:** - Click "Add environment variable". - Key: `NEXT_PUBLIC_API_URL` - Value: Your **Render Backend URL** (e.g., `https://bxtrack-backend.onrender.com`). - **Important:** Do NOT add a trailing slash `/` at the end. 6. Click **Deploy site**. 7. Netlify will give you a URL (e.g., `https://amazing-app-123.netlify.app`).
 
 ---
 
@@ -65,21 +70,8 @@ This guide attempts to take your **BxTrack** application to production using **R
 
 ---
 
-## Part 5: Database Push (Migration)
+## Troubleshooting
 
-Since we are using Prisma, we need to create the tables in the remote DB. The easiest way for a hobby app:
-
-1.  On your **Local Machine**, open `.env` in the `backend` folder.
-2.  Temporarily replace `DATABASE_URL` with the **External Connection String** from Render (found in Render DB dashboard).
-3.  Run:
-    ```bash
-    npx prisma db push
-    ```
-4.  This creates the tables in your production database.
-5.  **Revert** your local `.env` file to your local database URL.
-
-**Success!** Your App should now be live.
-
-- Frontend: Netlify URL
-- Backend: Render URL
-- Auth: Secure HttpOnly Cookies working Cross-Domain!
+**Migrations Failed?**
+If the Start Command fails on migration, ensure you have committed your `prisma/migrations` folder to GitHub.
+If you don't have migrations yet, run `npx prisma migrate dev --name init` locally, commit the generated files, and push again.
