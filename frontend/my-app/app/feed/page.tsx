@@ -3,26 +3,36 @@
 import { useEffect, useState } from 'react';
 import { articleApi, Article } from '@/lib/api';
 import Link from 'next/link';
+import Pagination from '@/components/Pagination';
 
 export default function PublicFeedPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchArticles();
-  }, []);
+    fetchArticles(currentPage);
+  }, [currentPage]);
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (page: number) => {
+    setIsLoading(true);
     try {
-      const data = await articleApi.getAll();
+      const data = await articleApi.getAll(page);
       setArticles((data as any).articles || []);
+      setTotalPages((data as any).pagination?.totalPages || 1);
     } catch (err) {
       console.error('Failed to load articles', err);
       setError('Failed to load articles.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -107,6 +117,12 @@ export default function PublicFeedPage() {
             ))}
           </div>
         )}
+
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
     </div>
   );

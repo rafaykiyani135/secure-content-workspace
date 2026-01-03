@@ -4,31 +4,37 @@ import { useEffect, useState } from 'react';
 import { articleApi, Article } from '@/lib/api';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
+import Pagination from '@/components/Pagination';
 
 export default function DashboardPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuthStore();
 
   useEffect(() => {
-    fetchArticles();
-  }, []);
+    fetchArticles(currentPage);
+  }, [currentPage]);
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (page: number) => {
+    setIsLoading(true);
     try {
-      const data = await articleApi.getAll();
-      // getAll returns { articles: [...], pagination: {...} } OR just array?
-      // My api.ts getAll returns `response.data.data`.
-      // The backend returns { success, message, data: { articles, pagination } }
-      // The api.ts returns `response.data.data` which IS `{ articles, pagination }`.
-      setArticles((data as any).articles || []);
+      const data = await articleApi.getAll(page);
+      setArticles(data.articles || []);
+      setTotalPages(data.pagination?.totalPages || 1);
     } catch (err) {
       console.error('Failed to load articles', err);
       setError('Failed to load articles');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -143,6 +149,12 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }
