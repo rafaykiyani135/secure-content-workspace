@@ -51,14 +51,24 @@ This guide attempts to take your **BxTrack** application to production using **R
     - **Publish directory:** `.next`
     - _Note:_ I have added a `netlify.toml` file in `frontend/my-app`. Netlify should detect this and automatically configure the **Essential Next.js** plugin.
 
-### **Important: Fixing "Page not found" (404)**
+**The Fix:** The `netlify.toml` I just added tells Netlify exactly what to do and ensures the Next.js plugin is active. Re-deploy your site and it should work!
 
-If you saw a 404 on all paths, it's usually because:
+### **Part 3.2: Fixing "Unauthorized" (401) / Cookie Issues**
 
-1.  **Publish Directory was "Not set":** Netlify didn't know the built files were inside `.next`.
-2.  **Missing Redirects:** Next.js uses client-side routing. Without the Next.js plugin, Netlify tries to find a physical `.html` file for every URL (like `/dashboard`) and fails.
+Browsers often block "third-party" cookies (Auth cookies sent from Netlify to Render). To fix this, I have implemented a **Proxy** that makes the backend appear to be on the same domain as the frontend.
 
-**The Fix:** The `netlify.toml` I just added tells Netlify exactly what to do and ensures the Next.js plugin is active. Re-deploy your site and it should work! 5. **Environment Variables:** - Click "Add environment variable". - Key: `NEXT_PUBLIC_API_URL` - Value: Your **Render Backend URL** (e.g., `https://bxtrack-backend.onrender.com`). - **Important:** Do NOT add a trailing slash `/` at the end. 6. Click **Deploy site**. 7. Netlify will give you a URL (e.g., `https://amazing-app-123.netlify.app`).
+1.  **I updated `api.ts`** to use `/api` (relative path).
+2.  **I updated `netlify.toml`** to redirect all `/api/*` requests to your Render URL.
+3.  **I updated `next.config.ts`** to do the same for local development.
+
+**Critical Action Required:**
+
+- **Remove the `NEXT_PUBLIC_API_URL`** environment variable from Netlify (it's no longer used).
+- **Update your Render URL** in `frontend/my-app/netlify.toml` if it's different from `https://bxtrack-backend.onrender.com`.
+- **Redeploy** to apply these changes.
+
+6.  Click **Deploy site**.
+7.  Netlify will give you a URL (e.g., `https://amazing-app-123.netlify.app`).
 
 ---
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// API base URL - update this to match your backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API base URL - using relative path to support proxying (Next.js rewrites / Netlify redirects)
+const API_BASE_URL = '/api';
 
 // Create axios instance with default config
 export const apiClient = axios.create({
