@@ -1,31 +1,27 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import { authApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
-  const { login: storeLogin, isAuthenticated } = useAuthStore();
+  const { login: storeLogin } = useAuthStore();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('VIEWER');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
-    }
-  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     
     // Basic validation
-    if (!email || !password) {
+    if (!name || !email || !password) {
       setError('Please fill in all fields');
       return;
     }
@@ -35,25 +31,28 @@ export default function LoginPage() {
       return;
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // API call
-      const response = await authApi.login({ email, password });
+      const response = await authApi.register({ email, password, name, role: role as any }); 
       
-      // Update global store
-      // The store.ts login action sets user. Token is in HttpOnly cookie.
+      console.log('Registration successful:', response);
+      
+      // Auto login in store
       storeLogin(response.user);
-      
-      console.log('Login successful:', response);
-      
+
       router.push('/dashboard');
+      
     } catch (err: any) {
-//...
-      console.error('Login error:', err);
+      console.error('Registration error:', err);
       setError(
         err.response?.data?.message || 
-        'Login failed. Please check your credentials and try again.'
+        'Registration failed. Please try again.'
       );
     } finally {
       setIsLoading(false);
@@ -66,16 +65,37 @@ export default function LoginPage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Welcome back
+            Create an account
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Sign in to your account to continue
+            Get started with BxTrack today
           </p>
         </div>
 
-        {/* Login Card */}
+        {/* Register Card */}
         <div className="rounded-2xl bg-white p-8 shadow-xl shadow-slate-200/50 dark:bg-slate-800 dark:shadow-slate-900/50">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name Field */}
+            <div>
+              <label 
+                htmlFor="name" 
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >
+                Full Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-blue-400"
+                placeholder="John Doe"
+              />
+            </div>
+
             {/* Email Field */}
             <div>
               <label 
@@ -97,6 +117,27 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Role Field */}
+            <div>
+              <label 
+                htmlFor="role" 
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:border-blue-400"
+              >
+                <option value="VIEWER">Viewer (Read Only)</option>
+                <option value="EDITOR">Editor (Create/Edit Own)</option>
+                <option value="ADMIN">Admin (Full Control)</option>
+              </select>
+            </div>
+
             {/* Password Field */}
             <div>
               <label 
@@ -109,7 +150,7 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -133,7 +174,7 @@ export default function LoginPage() {
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg 
+                   <svg 
                     className="h-5 w-5 animate-spin" 
                     xmlns="http://www.w3.org/2000/svg" 
                     fill="none" 
@@ -153,39 +194,25 @@ export default function LoginPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  Signing in...
+                  Creating account...
                 </span>
               ) : (
-                'Sign in'
+                'Create account'
               )}
             </button>
           </form>
 
           {/* Footer Links */}
           <div className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-            Don't have an account?{' '}
-            <a 
-              href="/register" 
+            Already have an account?{' '}
+            <Link 
+              href="/" 
               className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              Sign up
-            </a>
-          </div>
-          
-          <div className="mt-4 text-center">
-            <Link 
-              href="/feed" 
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              Browse Articles as Guest
+              Sign in
             </Link>
           </div>
         </div>
-
-        {/* Additional Info */}
-        <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-500">
-          By signing in, you agree to our Terms of Service and Privacy Policy
-        </p>
       </div>
     </div>
   );

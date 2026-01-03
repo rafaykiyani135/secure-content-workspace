@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum for user roles
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+// Enum for article status (draft/published)
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// User model
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  articles  Article[]
+
+  @@map("users")
+}
+
+// Article model
+model Article {
+  id        String        @id @default(uuid())
+  title     String
+  content   String        @db.Text
+  status    ArticleStatus @default(DRAFT)
+  authorId  String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Indexes for better query performance
+  @@index([authorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("articles")
+}
